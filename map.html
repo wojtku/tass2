@@ -1,12 +1,33 @@
 <html>
   <head>
     <title>Lublin</title>
-    <link rel="stylesheet" type="text/css" href="map.css">
+    <link rel="stylesheet" type="text/css" href="css/map.css">
+    <link rel="stylesheet" type="text/css" href="css/vendor/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/vendor/daterangepicker.css">
     <meta charset="UTF-8">
   </head>
   <body>
-    <div id="map"></div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAN11JmHUzcLl7Gu9aijV4ToG0-buMRrh4"></script>
-    <script src="map.js"></script>
+    <div id="wraper">
+      <div id="map"></div>
+      <div id="date">
+        <h3>Wybierz zakres dat</h3>
+        <input type="text" name="daterange" value="01/01/2015 - 01/31/2015">
+      </div>
+    </div>
+
+    <!-- Include Required Prerequisites -->
+    <script type="text/javascript" src="js/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="js/vendor/moment.min.js"></script>
+
+
+    <!-- Include Date Range Picker -->
+    <script type="text/javascript" src="js/vendor/daterangepicker.js"></script>
+
+    <!-- Include Google API -->
+    <script src="js/vendor/googleapis.js"></script>
+   <!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAN11JmHUzcLl7Gu9aijV4ToG0-buMRrh4"></script>-->
+
+    <!-- Include my script -->
+    <script src="js/map.js"></script>
   </body>
 </html>

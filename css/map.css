@@ -1,0 +1,22 @@
+html, body, #map {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0
+}
+
+#map {
+    border: 2px solid #3872ac;
+}
+#wrapper {
+    position:  relative;
+}
+#date {
+    position: absolute; top: 10px; right: 10px; z-index: 99;
+    background-color: antiquewhite;
+    border: solid 1px;
+    padding: 5px;
+}
+input {
+    float: right;
+}

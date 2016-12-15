@@ -6,15 +6,31 @@ const LUBLIN_COORDINATES = {
   lng: 22.5684
 };
 
+const initialize = () => {
+  initializeMap();
+  initializeDatePicker();
+  drawMarkers();
+};
+
+const initializeDatePicker = () => {
+  $(() => {
+    $('input[name="daterange"]').daterangepicker();
+  });
+};
+
 const initializeMap = () => {
   const mapProp = {
     center: LUBLIN_COORDINATES,
     zoom: 13,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+    },
+    navigationControl: true
   };
 
   map = new google.maps.Map(document.getElementById("map"), mapProp);
-  drawMarkers();
 };
 
 const bindInfoWindow = (marker, map, infowindow, strDescription) => {
@@ -37,7 +53,8 @@ const getApplications = () => {
   }, {
     "address": "al. Solidarności",
     "description": "",
-    "date": "13-09-2016"
+    "date": "28-09-2016",
+    "id": "273172"
   }];
 };
 
@@ -74,4 +91,4 @@ const drawMarker = ({ lat, lng, text }) => {
   bindInfoWindow(marker, map, infowindow, "dupa");
 };
 
-google.maps.event.addDomListener(window, 'load', initializeMap);
+google.maps.event.addDomListener(window, 'load', initialize);
