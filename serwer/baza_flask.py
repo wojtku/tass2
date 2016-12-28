@@ -158,11 +158,18 @@ class SerwerTass():
 
 class Regex():
     def __init__(self):
-        regex_string = r'(?:al\.|alej(?:e|ach|a|i)|[uU]l\.|[uU]lic[ay]?|[Ss]kwe(?:rze|r)|[Pp]lacu?\s)\s?\w+(?:-?[a-zA-Z]*)(?:\s?\d{1,3}\w?)?'
+        regex_przedrostek = r'al\.|alej(?:e|ach|a|i)|[uU]l\.|[uU]lic[ay]?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
+        regex_cialo = r'\s?\w+(?:-?[a-zA-Z]*)(?:\s?\d{1,3}\w?)?'
+        regex_string = r'(?:' + regex_przedrostek + ')' + regex_cialo
+
+        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")$", re.IGNORECASE)
         self.patt = re.compile(regex_string, re.IGNORECASE)
 
     def pattern(self):
         return self.patt
+
+    def pattern_przedrostek(self):
+        return self.patt_przedrostek
 
     def string_lokalizacyjny(self, lista_regex):
         ret = list(set(lista_regex))  # usuwam duplikaty

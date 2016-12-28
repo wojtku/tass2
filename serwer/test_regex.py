@@ -96,3 +96,34 @@ class Regex_test(unittest.TestCase):
 
     def test_multi_2(self):
         self.porownaj('abc abc ul.jana 88 adfab przy placu Pawła abcabc', ['ul.jana 88', 'placu Pawła'])
+
+
+class Regex_przedrostek_test(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        regex = Regex()
+        cls.pattern = regex.pattern_przedrostek()
+
+    def porownaj(self, text, przewidywany_wynik):
+        self.assertEqual(self.pattern.findall(text), przewidywany_wynik)
+
+    def test1(self):
+        self.porownaj('ulica', ['ulica'])
+
+    def test2(self):
+        self.porownaj('fdas ulica', [])
+
+    def test3(self):
+        self.porownaj('ulica ffsad', [])
+
+    def test4(self):
+        self.porownaj('ulicach', [])
+
+    def test5(self):
+        self.porownaj('Skwer', ['Skwer'])
+
+    def test6(self):
+        self.porownaj('alejach', ['alejach'])
+
+    def test7(self):
+        self.porownaj('placu', ['placu'])
