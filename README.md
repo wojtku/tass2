@@ -1,0 +1,1 @@
+#### [Dokumentacja serwera](serwer/README.md)
