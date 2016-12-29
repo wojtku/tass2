@@ -4,14 +4,22 @@ import re
 from tass2.serwer.baza_flask import Regex
 
 
-class Regex_test(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        regex = Regex()
-        cls.pattern = regex.pattern()
+class RegexTestBase(unittest.TestCase):
+    def init_pattern(self):
+        raise NotImplementedError
 
     def porownaj(self, text, przewidywany_wynik):
         self.assertEqual(self.pattern.findall(text), przewidywany_wynik)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.regex = Regex()
+        cls.pattern = cls.init_pattern(cls)
+
+
+class Regex_test(RegexTestBase):
+    def init_pattern(self):
+        return self.regex.pattern()
 
     def test_ul_1(self):
         self.porownaj('ul.mazurka32', ['ul.mazurka32'])
@@ -98,14 +106,9 @@ class Regex_test(unittest.TestCase):
         self.porownaj('abc abc ul.jana 88 adfab przy placu Pawła abcabc', ['ul.jana 88', 'placu Pawła'])
 
 
-class Regex_przedrostek_test(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        regex = Regex()
-        cls.pattern = regex.pattern_przedrostek()
-
-    def porownaj(self, text, przewidywany_wynik):
-        self.assertEqual(self.pattern.findall(text), przewidywany_wynik)
+class Regex_przedrostek_test(RegexTestBase):
+    def init_pattern(self):
+        return self.regex.pattern_przedrostek()
 
     def test1(self):
         self.porownaj('ulica', ['ulica'])
@@ -117,7 +120,7 @@ class Regex_przedrostek_test(unittest.TestCase):
         self.porownaj('ulica ffsad', [])
 
     def test4(self):
-        self.porownaj('ulicach', [])
+        self.porownaj('ulicach', ['ulicach'])
 
     def test5(self):
         self.porownaj('Skwer', ['Skwer'])
@@ -127,3 +130,15 @@ class Regex_przedrostek_test(unittest.TestCase):
 
     def test7(self):
         self.porownaj('placu', ['placu'])
+
+    def test_dopasowany_sam_przedrostek_1(self):
+        self.assertTrue(self.regex._dopasowany_sam_przedrostek('ul.'))
+
+    def test_dopasowany_sam_przedrostek_2(self):
+        self.assertFalse(self.regex._dopasowany_sam_przedrostek('ul. daf 32'))
+
+    def test_dopasowany_sam_przedrostek_3(self):
+        self.assertFalse(self.regex._dopasowany_sam_przedrostek('fasd ul.'))
+
+    def test_dopasowany_sam_przedrostek_4(self):
+        self.assertFalse(self.regex._dopasowany_sam_przedrostek('skwer daf 32'))

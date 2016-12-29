@@ -158,11 +158,11 @@ class SerwerTass():
 
 class Regex():
     def __init__(self):
-        regex_przedrostek = r'al\.|alej(?:e|ach|a|i)|[uU]l\.|[uU]lic[ay]?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
+        regex_przedrostek = r'al\.|alej(?:ach|[eai])|[uU]l\.|[uU]lic(?:[eay]|ach)?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
         regex_cialo = r'\s?\w+(?:-?[a-zA-Z]*)(?:\s?\d{1,3}\w?)?'
         regex_string = r'(?:' + regex_przedrostek + ')' + regex_cialo
 
-        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")$", re.IGNORECASE)
+        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*$", re.IGNORECASE)
         self.patt = re.compile(regex_string, re.IGNORECASE)
 
     def pattern(self):
@@ -173,10 +173,20 @@ class Regex():
 
     def string_lokalizacyjny(self, lista_regex):
         ret = list(set(lista_regex))  # usuwam duplikaty
+        for r in ret:
+            if self._dopasowany_sam_przedrostek(r):
+                ret.remove(r)
         return '|'.join(ret)  # odzielam kilka lokalizacji |
 
     def szukaj(self, text):
         return re.findall(self.patt, text)
+
+    def _dopasowany_sam_przedrostek(self, text):
+        if self.patt_przedrostek.match(text) is not None:
+            return True
+        else:
+            return False
+
 
 
 if __name__ == '__main__':
