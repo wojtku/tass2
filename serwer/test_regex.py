@@ -11,6 +11,9 @@ class RegexTestBase(unittest.TestCase):
     def porownaj(self, text, przewidywany_wynik):
         self.assertEqual(self.pattern.findall(text), przewidywany_wynik)
 
+    def assertNotMatch(self, text):
+        self.porownaj(text, [])
+
     @classmethod
     def setUpClass(cls):
         cls.regex = Regex()
@@ -19,7 +22,7 @@ class RegexTestBase(unittest.TestCase):
 
 class Regex_test(RegexTestBase):
     def init_pattern(self):
-        return self.regex.pattern()
+        return self.regex.patt
 
     def test_ul_1(self):
         self.porownaj('ul.mazurka32', ['ul.mazurka32'])
@@ -105,19 +108,40 @@ class Regex_test(RegexTestBase):
     def test_multi_2(self):
         self.porownaj('abc abc ul.jana 88 adfab przy placu Pawła abcabc', ['ul.jana 88', 'placu Pawła'])
 
+    def test_zakazane_1(self):
+        self.assertNotMatch("ulicy pod")
 
-class Regex_przedrostek_test(RegexTestBase):
+    def test_zakazane_2(self):
+        self.assertNotMatch("ulicy lub")
+
+    def test_zakazane_3(self):
+        self.assertNotMatch("ulicy i")
+
+    def test_zakazane_4(self):
+        self.assertNotMatch("ulicy albo")
+
+    def test_multi_3(self):
+        self.porownaj("ul. Konrada Wallenroda", ['ul. Konrada Wallenroda'])
+
+    def test_multi_4(self):
+        self.porownaj("ul. Konrada-Wallenroda Wielkiego", ['ul. Konrada-Wallenroda Wielkiego'])
+
+    def test_multi_5(self):
+        self.porownaj("ul. Łonrada Żallenroda", ['ul. Łonrada Żallenroda'])
+
+
+class Regex_sam_przedrostek_test(RegexTestBase):
     def init_pattern(self):
-        return self.regex.pattern_przedrostek()
+        return self.regex.patt_sam_przedrostek
 
     def test1(self):
         self.porownaj('ulica', ['ulica'])
 
     def test2(self):
-        self.porownaj('fdas ulica', [])
+        self.assertNotMatch('fdas ulica')
 
     def test3(self):
-        self.porownaj('ulica ffsad', [])
+        self.assertNotMatch('ulica ffsad')
 
     def test4(self):
         self.porownaj('ulicach', ['ulicach'])
@@ -142,3 +166,12 @@ class Regex_przedrostek_test(RegexTestBase):
 
     def test_dopasowany_sam_przedrostek_4(self):
         self.assertFalse(self.regex._dopasowany_sam_przedrostek('skwer daf 32'))
+
+
+class Regex_przedrostek_test(RegexTestBase):
+    def init_pattern(self):
+        return self.regex.patt_przedrostek
+
+    def test_utnij_przedrostek(self):
+        self.assertEqual('pomorska',
+                         self.regex._utnij_przedrostek('ul.  pomorska'))

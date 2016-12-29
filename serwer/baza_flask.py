@@ -89,6 +89,7 @@ class SerwerTass():
         self.db = db
         self.app = app
         self.regex = Regex()
+        self.wyjatki_id = []  # inty id
 
         if self.db.session.query(TassDB).all() == []:
             print('baza pusta, wczytuje dane')
@@ -130,7 +131,8 @@ class SerwerTass():
     def regexuj_lokalizacje(self):
         global_finded = []
         query = self.db.session.query(TassDB).filter(TassDB.pyt != None) \
-            .filter(TassDB.wniosek != None).all()
+            .filter(TassDB.wniosek != None) \
+            .filter(TassDB.id.notin_(self.wyjatki_id)).all()
         logging.debug('len query: %d' % len(query))
         for item in query:
             finded_pyt = self.regex.szukaj(item.pyt)
@@ -158,34 +160,51 @@ class SerwerTass():
 
 class Regex():
     def __init__(self):
+        dia_male = "śżźćłóęą"
+        dia_duze = "ŚŻŹĆŁÓĘĄ"
+        dia_m_d = dia_male + dia_duze
+        regex_zakazane = r'(?!(?:pod|lub|albo|ówki))'
         regex_przedrostek = r'al\.|alej(?:ach|[eai])|[uU]l\.|[uU]lic(?:[eay]|ach)?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
-        regex_cialo = r'\s?\w+(?:-?[a-zA-Z]*)(?:\s?\d{1,3}\w?)?'
+        regex_cialo = r'\s?' + regex_zakazane + '\w{3,}(?:-?[a-zśżźćłóęąA-ZŚŻŹĆŁÓĘĄ]*)(?:\s[A-ZŚŻŹĆŁÓĘĄ]\w{2,})?(?:\s?\d{1,3}\w?)?'
         regex_string = r'(?:' + regex_przedrostek + ')' + regex_cialo
 
-        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*$", re.IGNORECASE)
-        self.patt = re.compile(regex_string, re.IGNORECASE)
-
-    def pattern(self):
-        return self.patt
-
-    def pattern_przedrostek(self):
-        return self.patt_przedrostek
+        self.patt_sam_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*$", re.IGNORECASE)
+        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*", re.IGNORECASE)
+        self.patt = re.compile(regex_string)
 
     def string_lokalizacyjny(self, lista_regex):
-        ret = list(set(lista_regex))  # usuwam duplikaty
-        for r in ret:
-            if self._dopasowany_sam_przedrostek(r):
-                ret.remove(r)
+        ret = self._usun_duplikaty(lista_regex)
+        self._usun_gdy_sam_przedrostek(ret)
         return '|'.join(ret)  # odzielam kilka lokalizacji |
+
+    def _usun_duplikaty(self, lista_regex):
+        return list(set(lista_regex))
+
+    def _usun_o_tych_samych_cialach(self):
+        # TODO jak roznia sie tylko przedrostkiem a reszta ta sama
+        pass
+
+    def _usun_podobne(self):
+        # TODO wybierz te dluzsze gdzie rozny 'startwith' w ciele
+        pass
+
+    def _usun_gdy_sam_przedrostek(self, lista_regex):
+        for r in lista_regex:
+            if self._dopasowany_sam_przedrostek(r):
+                lista_regex.remove(r)
 
     def szukaj(self, text):
         return re.findall(self.patt, text)
 
     def _dopasowany_sam_przedrostek(self, text):
-        if self.patt_przedrostek.match(text) is not None:
+        if self.patt_sam_przedrostek.match(text) is not None:
             return True
         else:
             return False
+
+    def _utnij_przedrostek(self, text):
+        przedrostek = self.patt_przedrostek.match(text).group()
+        return text.strip(przedrostek)
 
 
 
