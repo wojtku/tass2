@@ -42,11 +42,28 @@ class TassDB(db.Model):
 db.create_all()
 
 
-@app.route("/hello")
+@app.route("/wnioski")
 def hello():
-    ret = {}
-    ret['hello'] = 'word'
-    ret['witaj'] = 'swiecie'
+    ret = []
+    query = db.session.query(TassDB).filter(TassDB.pyt != None) \
+        .filter(TassDB.wniosek != None) \
+        .filter(TassDB.lokalizacja != None) \
+        .filter(TassDB.id.notin_(SerwerTass.wyjatki_id)).all()
+    for item in query:
+        ret_item = {
+            'id': item.id,
+            'link': item.link,
+            'odp': item.odp,
+            'wniosek': item.wniosek,
+            'pyt': item.pyt,
+            'data': Wnioski.dateToDateString(item.data),
+            'kom_org': item.kom_org,
+            'lokalizacja': item.lokalizacja
+        }
+        ret.append(ret_item)
+
+    # ret['hello'] = 'word'
+    # ret['witaj'] = 'swiecie'
     return flask.jsonify(ret)
 
 
@@ -80,17 +97,20 @@ class Wnioski():
 
     @staticmethod
     def dateToDateString(date):
-        return '-'.join([date.day, date.month, date.year])
+        return '-'.join([str(date.day), str(date.month), str(date.year)])
 
 
 class SerwerTass():
+    wyjatki_id = [245104, 246830, 247873, 248264, 248299, 248564, 251245, 251926, 252119, 253536, 253640, 254257,
+                  255597, 255601, 257238, 258381, 258737, 258754, 259371, 259810, 262545, 262846, 265255, 265337,
+                  267014, 268584, 268706, 268880, 268884, 268944, 269183, 269189, 269260, 269995, 270263, 270449,
+                  270453, 272148, 272765, 272831, 272834, 273751, 273771, 274704]  # inty id
+
     def __init__(self, db, app):
         self.wnioski = Wnioski()
         self.db = db
         self.app = app
         self.regex = Regex()
-        self.wyjatki_id = []  # inty id
-
         if self.db.session.query(TassDB).all() == []:
             print('baza pusta, wczytuje dane')
             self.inicjuj_baze()
@@ -145,7 +165,8 @@ class SerwerTass():
             if lokalizacja is not "":
                 item.lokalizacja = lokalizacja
             else:
-                logging.debug('nie znaleziono wzorca')
+                # logging.debug('nie znaleziono wzorca')
+                pass
 
             global_finded.extend(finded)
 
@@ -160,13 +181,14 @@ class SerwerTass():
 
 class Regex():
     def __init__(self):
-        dia_male = "śżźćłóęą"
-        dia_duze = "ŚŻŹĆŁÓĘĄ"
+        dia_male = "&;śżźćłóęą"
+        dia_duze = "&;ŚŻŹĆŁÓĘĄ"
         dia_m_d = dia_male + dia_duze
-        regex_zakazane = r'(?!(?:pod|lub|albo|ówki))'
+        regex_zakazane = r'(?!(?:pod|lub|albo|ówki|oraz|zabaw|znych))'
         regex_przedrostek = r'al\.|alej(?:ach|[eai])|[uU]l\.|[uU]lic(?:[eay]|ach)?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
-        regex_cialo = r'\s?' + regex_zakazane + '\w{3,}(?:-?[a-zśżźćłóęąA-ZŚŻŹĆŁÓĘĄ]*)(?:\s[A-ZŚŻŹĆŁÓĘĄ]\w{2,})?(?:\s?\d{1,3}\w?)?'
+        regex_cialo = r'\s?' + regex_zakazane + '\w{4,}(?:-?[a-zśżźćłóęąA-ZŚŻŹĆŁÓĘĄ]*)(?:\s[A-ZŚŻŹĆŁÓĘĄ]\w{2,})?(?:\s?\d{1,3}\w?)?'
         regex_string = r'(?:' + regex_przedrostek + ')' + regex_cialo
+        logging.debug('regex: %s' % regex_string)
 
         self.patt_sam_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*$", re.IGNORECASE)
         self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*", re.IGNORECASE)
@@ -175,14 +197,20 @@ class Regex():
     def string_lokalizacyjny(self, lista_regex):
         ret = self._usun_duplikaty(lista_regex)
         self._usun_gdy_sam_przedrostek(ret)
+        # ret = self._usun_o_tych_samych_cialach(ret)
         return '|'.join(ret)  # odzielam kilka lokalizacji |
 
     def _usun_duplikaty(self, lista_regex):
         return list(set(lista_regex))
 
-    def _usun_o_tych_samych_cialach(self):
-        # TODO jak roznia sie tylko przedrostkiem a reszta ta sama
-        pass
+    def _usun_o_tych_samych_cialach(self, lista_regex):
+        # TODO cos slabo to dziala
+        ret_list = []
+        if len(lista_regex) == 1:
+            return lista_regex
+        for l in lista_regex:
+            ret_list.append(self._utnij_przedrostek(l))
+        return list(set(ret_list))
 
     def _usun_podobne(self):
         # TODO wybierz te dluzsze gdzie rozny 'startwith' w ciele
@@ -207,14 +235,14 @@ class Regex():
         return text.strip(przedrostek)
 
 
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+    # logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
     serv = SerwerTass(db, app)
     serv._czysc_lokalizacje()
     serv.regexuj_lokalizacje()
-    # serv.run()
+    serv.run()
     print('koniec')
 
 

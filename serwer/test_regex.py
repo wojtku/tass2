@@ -175,3 +175,15 @@ class Regex_przedrostek_test(RegexTestBase):
     def test_utnij_przedrostek(self):
         self.assertEqual('pomorska',
                          self.regex._utnij_przedrostek('ul.  pomorska'))
+
+
+class Regex_usuwanie(RegexTestBase):
+    def init_pattern(self):
+        return self.regex.patt
+
+    def oczyszczone(self, lista_in, lista_oczekiwana):
+        self.assertEqual(lista_oczekiwana,
+                         self.regex._usun_o_tych_samych_cialach(lista_in))
+
+    def test_to_samo_cialo_1(self):
+        self.oczyszczone(['ul.Boryny', 'ulica Boryny'], ['Boryny'])
