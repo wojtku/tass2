@@ -64,7 +64,9 @@ def hello():
 
     # ret['hello'] = 'word'
     # ret['witaj'] = 'swiecie'
-    return flask.jsonify(ret)
+    response = flask.jsonify(ret)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 class Wnioski():
@@ -76,6 +78,7 @@ class Wnioski():
         # 0 jest zawsze najnowszym wnioskiem
         url = "/".join([self.main_url, str(od), str(ile)]) + '/'
         response = requests.get(url)
+        response.headers['Access-Control-Allow-Origin'] = '*'
         return response.json()['items']
 
     def pobierz_wszystko(self):
