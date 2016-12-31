@@ -1,12 +1,17 @@
 ## Wymagania
-+ Python3
++ Python3.5
 + Flask [pip3 install flask]
 + Flask-SQLAlchemy
++ requests [pip3 isntall requests]
++ Googlemaps [pip3 install -U googlemaps] (do geokodowania adresów)
 
 ## Instrukcje
 
 ##### Uruchomienie serwera
     python3 serwer/baza_flask.py
+
+##### Uruchomienie aplikacji lokalnie
+    Po uruchomieniu serwera uruchomić plik map.html w dowolnej przeglądarce
     
 ##### Testy
     python3 -m unittest discover -v serwer
