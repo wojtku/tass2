@@ -8,6 +8,7 @@ import requests
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import DATE
+import googlemaps
 
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///TASS.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'True'
 
 db = SQLAlchemy(app)
-
+gmaps = googlemaps.Client(key='AIzaSyAN11JmHUzcLl7Gu9aijV4ToG0-buMRrh4')
 
 class TassDB(db.Model):
     __tablename__ = 'wnioski'
@@ -27,8 +28,10 @@ class TassDB(db.Model):
     data = db.Column(DATE, nullable=True)
     kom_org = db.Column(db.String, nullable=True)
     lokalizacja = db.Column(db.String, nullable=True)
+    latitude = db.Column(db.String, nullable=True)
+    longitude = db.Column(db.String, nullable=True)
 
-    def __init__(self, id, link, odp, wniosek, pyt, data, kom_org, lokalizacja):
+    def __init__(self, id, link, odp, wniosek, pyt, data, kom_org, lokalizacja, latitude, longitude):
         self.id = id
         self.link = link
         self.odp = odp
@@ -37,6 +40,8 @@ class TassDB(db.Model):
         self.data = data
         self.kom_org = kom_org
         self.lokalizacja = lokalizacja
+        self.latitude = latitude
+        self.longitude = longitude
 
 
 db.create_all()
@@ -49,19 +54,24 @@ def hello():
         .filter(TassDB.wniosek != None) \
         .filter(TassDB.lokalizacja != None) \
         .filter(TassDB.id.notin_(SerwerTass.wyjatki_id)).all()
-    for item in query:
-        ret_item = {
-            'id': item.id,
-            'link': item.link,
-            'odp': item.odp,
-            'wniosek': item.wniosek,
-            'pyt': item.pyt,
-            'data': Wnioski.dateToDateString(item.data),
-            'kom_org': item.kom_org,
-            'lokalizacja': item.lokalizacja
-        }
-        ret.append(ret_item)
-
+    short_query = query[:20]
+    for item in short_query:
+        addresses = item.lokalizacja.split("|")
+        for address in addresses:
+            geocode_result = gmaps.geocode("Lublin, " + address)
+            ret_item = {
+                'id': item.id,
+                'link': item.link,
+                'odp': item.odp,
+                'wniosek': item.wniosek,
+                'pyt': item.pyt,
+                'data': Wnioski.dateToDateString(item.data),
+                'kom_org': item.kom_org,
+                'lokalizacja': address,
+                'latitude': geocode_result[0]['geometry']['location']['lat'],
+                'longitude': geocode_result[0]['geometry']['location']['lng']
+            }
+            ret.append(ret_item)
     # ret['hello'] = 'word'
     # ret['witaj'] = 'swiecie'
     response = flask.jsonify(ret)
@@ -133,7 +143,9 @@ class SerwerTass():
                 'pyt': None,
                 'data': None,
                 'kom_org': None,
-                'lokalizacja': None
+                'lokalizacja': None,
+                'latitude': None,
+                'longitude': None
             }
             for key in new.keys():
                 try:
