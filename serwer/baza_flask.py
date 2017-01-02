@@ -5,7 +5,7 @@ from datetime import date
 
 import flask
 import requests
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import DATE
 import googlemaps
@@ -50,15 +50,24 @@ db.create_all()
 @app.route("/wnioski")
 def hello():
     ret = []
+    try:
+        date_from = Wnioski.dateStringToDate(request.values['date_from'])
+        date_to = Wnioski.dateStringToDate(request.values['date_to'])
+    except Exception as e:
+        return flask.jsonify({'error': e})
     query = db.session.query(TassDB).filter(TassDB.pyt != None) \
         .filter(TassDB.wniosek != None) \
         .filter(TassDB.lokalizacja != None) \
+        .filter(TassDB.latitude != None) \
+        .filter(TassDB.longitude != None) \
+        .filter(TassDB.data > date_from, TassDB.data < date_to) \
         .filter(TassDB.id.notin_(SerwerTass.wyjatki_id)).all()
-    short_query = query[:20]
-    for item in short_query:
-        addresses = item.lokalizacja.split("|")
-        for address in addresses:
-            geocode_result = gmaps.geocode("Lublin, " + address)
+    # short_query = query[:20]
+    for item in query:
+        addresses = item.longitude.split("|")
+        longitudes = item.longitude.split("|")
+        latitudes = item.latitude.split("|")
+        for address in range(len(addresses)):
             ret_item = {
                 'id': item.id,
                 'link': item.link,
@@ -67,15 +76,17 @@ def hello():
                 'pyt': item.pyt,
                 'data': Wnioski.dateToDateString(item.data),
                 'kom_org': item.kom_org,
-                'lokalizacja': address,
-                'latitude': geocode_result[0]['geometry']['location']['lat'],
-                'longitude': geocode_result[0]['geometry']['location']['lng']
+                'lokalizacja': item.lokalizacja,
+                'latitude': float(latitudes[address]),
+                'longitude': float(longitudes[address])
             }
             ret.append(ret_item)
-    # ret['hello'] = 'word'
-    # ret['witaj'] = 'swiecie'
     response = flask.jsonify(ret)
     response.headers['Access-Control-Allow-Origin'] = '*'
+    try:
+        logging.info('response %d lokalizacji' % len(ret))
+    except Exception as e:
+        pass
     return response
 
 
@@ -130,6 +141,7 @@ class SerwerTass():
             print('dane wczytane')
         else:
             print('baza została już wcześniej utworzona')
+            print('aby ją wczytać ponownie usun plik bazy serwer/TASS.db')
 
     def inicjuj_baze(self):
         wnioski = self.wnioski.pobierz_wszystko()
@@ -168,6 +180,8 @@ class SerwerTass():
         query = self.db.session.query(TassDB).filter(TassDB.pyt != None) \
             .filter(TassDB.wniosek != None) \
             .filter(TassDB.id.notin_(self.wyjatki_id)).all()
+        # TODO zmienic na cale query, usunac linijke nizej
+        # query = query[:20]
         logging.debug('len query: %d' % len(query))
         for item in query:
             finded_pyt = self.regex.szukaj(item.pyt)
@@ -179,6 +193,16 @@ class SerwerTass():
             lokalizacja = self.regex.string_lokalizacyjny(finded)
             if lokalizacja is not "":
                 item.lokalizacja = lokalizacja
+                for address in lokalizacja.split("|"):
+                    geocode_result = gmaps.geocode("Lublin, " + address)
+                    try:
+                        lat = geocode_result[0]['geometry']['location']['lat']
+                        lng = geocode_result[0]['geometry']['location']['lng']
+                    except IndexError as error:
+                        logging.debug('google api nie znalazlo lokalizacji: %s', address)
+                        continue
+                    item.latitude = SerwerTass._dopisz_albo_utworz_stringa(cel=item.latitude, text=lat)
+                    item.longitude = SerwerTass._dopisz_albo_utworz_stringa(cel=item.longitude, text=lng)
             else:
                 # logging.debug('nie znaleziono wzorca')
                 pass
@@ -188,9 +212,21 @@ class SerwerTass():
         logging.debug('wszystkich lokacji w bazie: %d', len(global_finded))
         self.db.session.commit()
 
+    @staticmethod
+    def _dopisz_albo_utworz_stringa(cel, text, separator='|'):
+        if cel == None:
+            return str(text)
+        else:
+            return (separator).join([cel, str(text)])
+
+
+
     def _czysc_lokalizacje(self):
+        logging.debug('czyszcze dane lokalizacyjne')
         for item in self.db.session.query(TassDB).all():
             item.lokalizacja = None
+            item.latitude = None
+            item.longitude = None
         self.db.session.commit()
 
 
@@ -198,7 +234,7 @@ class Regex():
     def __init__(self):
         dia_male = "&;śżźćłóęą"
         dia_duze = "&;ŚŻŹĆŁÓĘĄ"
-        dia_m_d = dia_male + dia_duze
+        # dia_m_d = dia_male + dia_duze
         regex_zakazane = r'(?!(?:pod|lub|albo|ówki|oraz|zabaw|znych))'
         regex_przedrostek = r'al\.|alej(?:ach|[eai])|[uU]l\.|[uU]lic(?:[eay]|ach)?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
         regex_cialo = r'\s?' + regex_zakazane + '\w{4,}(?:-?[a-zśżźćłóęąA-ZŚŻŹĆŁÓĘĄ]*)(?:\s[A-ZŚŻŹĆŁÓĘĄ]\w{2,})?(?:\s?\d{1,3}\w?)?'
@@ -255,8 +291,8 @@ if __name__ == '__main__':
     # logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
     serv = SerwerTass(db, app)
-    serv._czysc_lokalizacje()
-    serv.regexuj_lokalizacje()
+    # serv._czysc_lokalizacje()
+    # serv.regexuj_lokalizacje()
     serv.run()
     print('koniec')
 

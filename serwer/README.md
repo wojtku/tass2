@@ -8,19 +8,20 @@
 ## Instrukcje
 
 ##### Uruchomienie serwera
-    python3 serwer/baza_flask.py
+    python3.5 serwer/baza_flask.py
 
 ##### Uruchomienie aplikacji lokalnie
     Po uruchomieniu serwera uruchomić plik map.html w dowolnej przeglądarce
     
 ##### Testy
-    python3 -m unittest discover -v serwer
+    python3.5 -m unittest discover -v serwer
     
 ##### Zapytanie
-zwraca wnioski z całego zakresu czasowego w postaci JSON (do zmiany)
+zwraca wnioski z całego zakresu czasowego w postaci JSON  
 jest to lista słowników z kluczami [id, data, lokalizacja itd.]
+pola daty *data_from* i *data_to* w formacie *DD-MM-RRRR*
 
-    http://127.0.0.1:5000/wnioski
+    http://127.0.0.1:5000/wnioski?date_from=21-01-2010&date_to=21-05-2017
 
 przykład zapytania jest zrzucony do pliku serwer/wnioski.json (jakbyś nie chciał uruchamiać całego serwera)
 
