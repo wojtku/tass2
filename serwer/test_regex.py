@@ -1,7 +1,7 @@
 import unittest
 import re
 
-from tass2.serwer.baza_flask import Regex
+from regex import Regex
 
 
 class RegexTestBase(unittest.TestCase):

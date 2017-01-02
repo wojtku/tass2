@@ -1,14 +1,12 @@
 import logging
-import re
-from collections import OrderedDict
-from datetime import date
 
 import flask
-import requests
+import googlemaps
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.sqlite import DATE
-import googlemaps
+from regex import Regex
+from wnioski import Wnioski
 
 app = Flask(__name__)
 
@@ -16,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///TASS.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'True'
 
 db = SQLAlchemy(app)
+
 gmaps = googlemaps.Client(key='AIzaSyAN11JmHUzcLl7Gu9aijV4ToG0-buMRrh4')
 
 class TassDB(db.Model):
@@ -45,7 +44,6 @@ class TassDB(db.Model):
 
 
 db.create_all()
-
 
 @app.route("/wnioski")
 def hello():
@@ -89,41 +87,6 @@ def hello():
         pass
     return response
 
-
-class Wnioski():
-    def __init__(self):
-        self.main_url = 'http://bip.lublin.eu/api-json/ui/all'
-        self.db = db
-
-    def pobierz(self, od, ile):
-        # 0 jest zawsze najnowszym wnioskiem
-        url = "/".join([self.main_url, str(od), str(ile)]) + '/'
-        response = requests.get(url)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response.json()['items']
-
-    def pobierz_wszystko(self):
-        limit = 100
-        count = self.__ile_wszystkich_wnioskow()
-        d = OrderedDict()
-        for n in range(0, count, limit):
-            for item in self.pobierz(od=n, ile=limit):
-                d[item['id']] = item
-        return d
-
-    def __ile_wszystkich_wnioskow(self):
-        return int(requests.get(self.main_url + '/').json()['count'])
-
-    @staticmethod
-    def dateStringToDate(datestring_dmy):
-        lista = datestring_dmy.split('-')
-        return date(year=int(lista[2]), month=int(lista[1]), day=int(lista[0]))
-
-    @staticmethod
-    def dateToDateString(date):
-        return '-'.join([str(date.day), str(date.month), str(date.year)])
-
-
 class SerwerTass():
     wyjatki_id = [245104, 246830, 247873, 248264, 248299, 248564, 251245, 251926, 252119, 253536, 253640, 254257,
                   255597, 255601, 257238, 258381, 258737, 258754, 259371, 259810, 262545, 262846, 265255, 265337,
@@ -131,7 +94,7 @@ class SerwerTass():
                   270453, 272148, 272765, 272831, 272834, 273751, 273771, 274704]  # inty id
 
     def __init__(self, db, app):
-        self.wnioski = Wnioski()
+        self.wnioski = Wnioski(db)
         self.db = db
         self.app = app
         self.regex = Regex()
@@ -230,61 +193,6 @@ class SerwerTass():
         self.db.session.commit()
 
 
-class Regex():
-    def __init__(self):
-        dia_male = "&;śżźćłóęą"
-        dia_duze = "&;ŚŻŹĆŁÓĘĄ"
-        # dia_m_d = dia_male + dia_duze
-        regex_zakazane = r'(?!(?:pod|lub|albo|ówki|oraz|zabaw|znych))'
-        regex_przedrostek = r'al\.|alej(?:ach|[eai])|[uU]l\.|[uU]lic(?:[eay]|ach)?|[Ss]kwe(?:rze|r)|[Pp]lacu?'
-        regex_cialo = r'\s?' + regex_zakazane + '\w{4,}(?:-?[a-zśżźćłóęąA-ZŚŻŹĆŁÓĘĄ]*)(?:\s[A-ZŚŻŹĆŁÓĘĄ]\w{2,})?(?:\s?\d{1,3}\w?)?'
-        regex_string = r'(?:' + regex_przedrostek + ')' + regex_cialo
-        logging.debug('regex: %s' % regex_string)
-
-        self.patt_sam_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*$", re.IGNORECASE)
-        self.patt_przedrostek = re.compile(r"^(?:" + regex_przedrostek + r")\s*", re.IGNORECASE)
-        self.patt = re.compile(regex_string)
-
-    def string_lokalizacyjny(self, lista_regex):
-        ret = self._usun_duplikaty(lista_regex)
-        self._usun_gdy_sam_przedrostek(ret)
-        # ret = self._usun_o_tych_samych_cialach(ret)
-        return '|'.join(ret)  # odzielam kilka lokalizacji |
-
-    def _usun_duplikaty(self, lista_regex):
-        return list(set(lista_regex))
-
-    def _usun_o_tych_samych_cialach(self, lista_regex):
-        # TODO cos slabo to dziala
-        ret_list = []
-        if len(lista_regex) == 1:
-            return lista_regex
-        for l in lista_regex:
-            ret_list.append(self._utnij_przedrostek(l))
-        return list(set(ret_list))
-
-    def _usun_podobne(self):
-        # TODO wybierz te dluzsze gdzie rozny 'startwith' w ciele
-        pass
-
-    def _usun_gdy_sam_przedrostek(self, lista_regex):
-        for r in lista_regex:
-            if self._dopasowany_sam_przedrostek(r):
-                lista_regex.remove(r)
-
-    def szukaj(self, text):
-        return re.findall(self.patt, text)
-
-    def _dopasowany_sam_przedrostek(self, text):
-        if self.patt_sam_przedrostek.match(text) is not None:
-            return True
-        else:
-            return False
-
-    def _utnij_przedrostek(self, text):
-        przedrostek = self.patt_przedrostek.match(text).group()
-        return text.strip(przedrostek)
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
@@ -294,8 +202,3 @@ if __name__ == '__main__':
     # serv._czysc_lokalizacje()
     # serv.regexuj_lokalizacje()
     serv.run()
-    print('koniec')
-
-
-    # app.debug = True
-    # app.run()
