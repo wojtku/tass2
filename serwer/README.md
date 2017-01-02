@@ -17,13 +17,13 @@
     python3.5 -m unittest discover -v serwer
     
 ##### Zapytanie
-zwraca wnioski z całego zakresu czasowego w postaci JSON  
+zwraca wnioski z zadanego zakresu czasowego w postaci JSON  
 jest to lista słowników z kluczami [id, data, lokalizacja itd.]
 pola daty *data_from* i *data_to* w formacie *DD-MM-RRRR*
 
     http://127.0.0.1:5000/wnioski?date_from=21-01-2010&date_to=21-05-2017
 
-przykład zapytania jest zrzucony do pliku serwer/wnioski.json (jakbyś nie chciał uruchamiać całego serwera)
+przykład zapytania (wszystkie wnioski) jest zrzucony do pliku serwer/wnioski.json (jakbyś nie chciał uruchamiać całego serwera)
 
 ##### Budowanie bazy
 cała baza danych buduje sie do pliku serwer/TASS.db podczas pierwszego uruchomienia serwera  
