@@ -111,15 +111,11 @@ const httpGet = (theUrl) => {
     return JSON.parse(xmlHttp.responseText);
 };
 
-//kfdsajlf;dska;j
-const formatParams = (params) =
->
-{
+const formatParams = (params) =>{
     return "?" + Object.keys(params).map(function (key) {
             return key + "=" + params[key]
         }).join("&");
-}
-;
+};
 
 const drawMarkers = (applications) => {
   applications.map(application =>  prepareMarkers(application));
