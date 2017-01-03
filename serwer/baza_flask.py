@@ -65,6 +65,7 @@ def hello():
         addresses = item.longitude.split("|")
         longitudes = item.longitude.split("|")
         latitudes = item.latitude.split("|")
+        lokalizacje = item.lokalizacja.split("|")
         for address in range(len(addresses)):
             ret_item = {
                 'id': item.id,
@@ -74,7 +75,7 @@ def hello():
                 'pyt': item.pyt,
                 'data': Wnioski.dateToDateString(item.data),
                 'kom_org': item.kom_org,
-                'lokalizacja': item.lokalizacja,
+                'lokalizacja': lokalizacje[address],
                 'latitude': float(latitudes[address]),
                 'longitude': float(longitudes[address])
             }
