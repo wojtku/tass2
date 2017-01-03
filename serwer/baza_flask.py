@@ -102,6 +102,10 @@ class SerwerTass():
             print('baza pusta, wczytuje dane')
             self.inicjuj_baze()
             print('dane wczytane')
+            print('wyciągam lokalizacje')
+            self._czysc_lokalizacje()
+            self.regexuj_lokalizacje()
+            print('baza danych gotowa')
         else:
             print('baza została już wcześniej utworzona')
             print('aby ją wczytać ponownie usun plik bazy serwer/TASS.db')
