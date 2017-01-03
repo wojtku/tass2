@@ -5,7 +5,6 @@ const LUBLIN_COORDINATES = {
   lat: 51.2464,
   lng: 22.5684
 };
-// const MOCK_MODE = true;
 const MOCK_MODE = false;
 const dateRange = $('input[name="daterange"]');
 let markers = [];
@@ -31,9 +30,9 @@ const initializeDatePicker = () => {
 };
 
 dateRange.on('apply.daterangepicker', (ev, picker) => {
-  $(this).val(picker.startDate.format('MM-DD-YYYY') + ' - ' + picker.endDate.format('MM-DD-YYYY'));
-  const dateFrom = picker.startDate.format('MM-DD-YYYY');
-  const dateTo = picker.endDate.format('MM-DD-YYYY');
+  $(this).val(picker.startDate.format('DD-MM-YYYY') + ' - ' + picker.endDate.format('DD-MM-YYYY'));
+  const dateFrom = picker.startDate.format('DD-MM-YYYY');
+  const dateTo = picker.endDate.format('DD-MM-YYYY');
   getApplicationsWithDateRange(dateFrom, dateTo);
 });
 
@@ -79,49 +78,33 @@ const toggleBounce = () => {
   }
 };
 
-const getApplications = () => {
+const getApplications = (dateFrom = moment().subtract(30, 'days').format('DD-MM-YYYY'), dateTo = moment().format('DD-MM-YYYY')) => {
   if(MOCK_MODE) {
     return mock;
   } else {
-    return httpGet("http://127.0.0.1:5000/wnioski");
+    return httpGet(`http://127.0.0.1:5000/wnioski?date_from=${dateFrom}&date_to=${dateTo}`);
   }
 };
 
 const getApplicationsWithDateRange = (dateFrom, dateTo) => {
-  // TODO: strzał do serwera, póki co zwraca wszystko
-  const applications = getApplications();
-  const newList = [];
-  newList.push(applications[0]);
-  newList.push(applications[2]);
+  const applications = getApplications(dateFrom, dateTo);
   clearMarkers();
   initializeMap();
-  drawMarkers(newList);
+  drawMarkers(applications);
 };
 
 const httpGet = (theUrl) => {
     var xmlHttp = new XMLHttpRequest();
-    // TODO: przekazac zmienne dat do params
-    var params = {
-        date_from: '21-10-2010',
-        date_to: '21-10-2017'
-    }
-    theUrl = theUrl + formatParams(params)
     xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
     xmlHttp.send( null );
     return JSON.parse(xmlHttp.responseText);
 };
 
-const formatParams = (params) =>{
-    return "?" + Object.keys(params).map(function (key) {
-            return key + "=" + params[key]
-        }).join("&");
-};
-
 const drawMarkers = (applications) => {
   applications.map(application =>  prepareMarkers(application));
   markers.map(marker =>  bindInfoWindow(marker, map, marker.infoWindowContent));
-  const markerCluster = new MarkerClusterer(map, markers,
-    {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+  //const markerCluster = new MarkerClusterer(map, markers,
+    //{imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
 };
 
 const clearMarkers = () => {
