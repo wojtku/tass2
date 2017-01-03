@@ -5,7 +5,8 @@ const LUBLIN_COORDINATES = {
   lat: 51.2464,
   lng: 22.5684
 };
-const MOCK_MODE = true;
+// const MOCK_MODE = true;
+const MOCK_MODE = false;
 const dateRange = $('input[name="daterange"]');
 let markers = [];
 
@@ -99,10 +100,25 @@ const getApplicationsWithDateRange = (dateFrom, dateTo) => {
 
 const httpGet = (theUrl) => {
     var xmlHttp = new XMLHttpRequest();
+    // TODO: przekazac zmienne dat do params
+    var params = {
+        date_from: '21-10-2010',
+        date_to: '21-10-2017'
+    }
+    theUrl = theUrl + formatParams(params)
     xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
     xmlHttp.send( null );
     return JSON.parse(xmlHttp.responseText);
 };
+
+const formatParams = (params) =
+>
+{
+    return "?" + Object.keys(params).map(function (key) {
+            return key + "=" + params[key]
+        }).join("&");
+}
+;
 
 const drawMarkers = (applications) => {
   applications.map(application =>  prepareMarkers(application));
