@@ -8,6 +8,10 @@ const LUBLIN_COORDINATES = {
 const MOCK_MODE = true;
 const dateRange = $('input[name="daterange"]');
 let markers = [];
+let applications = [];
+let dateFrom;
+let dateTo;
+let groupName;
 
 const initialize = () => {
   initializeDatePicker();
@@ -28,13 +32,6 @@ const initializeDatePicker = () => {
     });
   });
 };
-
-dateRange.on('apply.daterangepicker', (ev, picker) => {
-  $(this).val(picker.startDate.format('DD-MM-YYYY') + ' - ' + picker.endDate.format('DD-MM-YYYY'));
-  const dateFrom = picker.startDate.format('DD-MM-YYYY');
-  const dateTo = picker.endDate.format('DD-MM-YYYY');
-  getApplicationsWithDateRange(dateFrom, dateTo);
-});
 
 const initializeMap = () => {
   const mapProp = {
@@ -80,29 +77,77 @@ const toggleBounce = () => {
 
 const getApplications = (dateFrom = moment().subtract(30, 'days').format('DD-MM-YYYY'), dateTo = moment().format('DD-MM-YYYY')) => {
   if(MOCK_MODE) {
-    const costApplications = getCostApplications(mock);
-    return getOwnerApplications(mock);
+    applications = mock;
   } else {
-    return httpGet(`http://127.0.0.1:5000/wnioski?date_from=${dateFrom}&date_to=${dateTo}`);
+    applications = httpGet(`http://127.0.0.1:5000/wnioski?date_from=${dateFrom}&date_to=${dateTo}`);
   }
+  return applications;
 };
 
+$('input[type=radio]').click(function(){
+  groupName = $('input[name="group"]:checked').val();
+  getApplicationsWithDateRange(dateFrom, dateTo);
+});
+
+dateRange.on('apply.daterangepicker', (ev, picker) => {
+  $(this).val(picker.startDate.format('DD-MM-YYYY') + ' - ' + picker.endDate.format('DD-MM-YYYY'));
+  dateFrom = picker.startDate.format('DD-MM-YYYY');
+  dateTo = picker.endDate.format('DD-MM-YYYY');
+  getApplicationsWithDateRange(dateFrom, dateTo);
+});
+
 const getApplicationsWithDateRange = (dateFrom, dateTo) => {
-  const applications = getApplications(dateFrom, dateTo);
+  applications = getApplications(dateFrom, dateTo);
+  switch (groupName) {
+    case 'all':
+      break;
+    case 'build':
+      applications = getBuildApplications(applications);
+      break;
+    case 'cost':
+      applications = getCostApplications(applications);
+      break;
+    case 'owner':
+      applications = getOwnerApplications(applications);
+      break;
+    case 'access':
+      applications = getAccessApplications(applications);
+      break;
+    case 'act':
+      applications = getActApplications(applications);
+      break;
+    case 'bailout':
+      applications = getBailoutApplications(applications);
+      break;
+    case 'document':
+      applications = getDocumentApplications(applications);
+      break;
+    default:
+      break;
+  }
   clearMarkers();
   initializeMap();
   drawMarkers(applications);
 };
 
-const getCostApplications = (applications) => applications.filter(application =>
-    application.pyt.includes("koszt") ||
-    application.odp.includes("koszt") ||
-    application.wniosek.includes("koszt"));
+const filterApplicationsWithWord = (applications, word) => applications.filter(application =>
+    application.pyt.includes(word) ||
+    application.odp.includes(word) ||
+    application.wniosek.includes(word));
 
-const getOwnerApplications = (applications) => applications.filter(application =>
-    application.pyt.includes("właściciel") ||
-    application.odp.includes("właściciel") ||
-    application.wniosek.includes("właściciel"));
+const getBuildApplications = (applications) => filterApplicationsWithWord(applications, "budow");
+
+const getCostApplications = (applications) => filterApplicationsWithWord(applications, "koszt");
+
+const getOwnerApplications = (applications) => filterApplicationsWithWord(applications, "właściciel");
+
+const getActApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "ustaw");
+
+const getAccessApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dostęp");
+
+const getBailoutApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dofinansowanie");
+
+const getDocumentApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dokument");
 
 const httpGet = (theUrl) => {
     var xmlHttp = new XMLHttpRequest();
