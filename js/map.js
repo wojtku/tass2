@@ -5,7 +5,7 @@ const LUBLIN_COORDINATES = {
   lat: 51.2464,
   lng: 22.5684
 };
-const MOCK_MODE = false;
+const MOCK_MODE = true;
 const dateRange = $('input[name="daterange"]');
 let markers = [];
 
@@ -80,7 +80,8 @@ const toggleBounce = () => {
 
 const getApplications = (dateFrom = moment().subtract(30, 'days').format('DD-MM-YYYY'), dateTo = moment().format('DD-MM-YYYY')) => {
   if(MOCK_MODE) {
-    return mock;
+    const costApplications = getCostApplications(mock);
+    return getOwnerApplications(mock);
   } else {
     return httpGet(`http://127.0.0.1:5000/wnioski?date_from=${dateFrom}&date_to=${dateTo}`);
   }
@@ -92,6 +93,16 @@ const getApplicationsWithDateRange = (dateFrom, dateTo) => {
   initializeMap();
   drawMarkers(applications);
 };
+
+const getCostApplications = (applications) => applications.filter(application =>
+    application.pyt.includes("koszt") ||
+    application.odp.includes("koszt") ||
+    application.wniosek.includes("koszt"));
+
+const getOwnerApplications = (applications) => applications.filter(application =>
+    application.pyt.includes("właściciel") ||
+    application.odp.includes("właściciel") ||
+    application.wniosek.includes("właściciel"));
 
 const httpGet = (theUrl) => {
     var xmlHttp = new XMLHttpRequest();
