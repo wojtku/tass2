@@ -5,7 +5,7 @@ const LUBLIN_COORDINATES = {
   lat: 51.2464,
   lng: 22.5684
 };
-const MOCK_MODE = true;
+const MOCK_MODE = false;
 const dateRange = $('input[name="daterange"]');
 let markers = [];
 let applications = [];
@@ -20,7 +20,7 @@ const initialize = () => {
 };
 
 const initializeDatePicker = () => {
-  const startDate = moment().subtract(30, 'days');
+  const startDate = moment().subtract(365, 'days');
   const endDate = moment();
   $(() => {
     dateRange.daterangepicker({
@@ -75,7 +75,7 @@ const toggleBounce = () => {
   }
 };
 
-const getApplications = (dateFrom = moment().subtract(30, 'days').format('DD-MM-YYYY'), dateTo = moment().format('DD-MM-YYYY')) => {
+const getApplications = (dateFrom = moment().subtract(365, 'days').format('DD-MM-YYYY'), dateTo = moment().format('DD-MM-YYYY')) => {
   if(MOCK_MODE) {
     applications = mock;
   } else {
@@ -122,6 +122,12 @@ const getApplicationsWithDateRange = (dateFrom, dateTo) => {
     case 'document':
       applications = getDocumentApplications(applications);
       break;
+    case 'building':
+      applications = getBuildingApplications(applications);
+      break;
+    case 'permission':
+      applications = getPermissionApplications(applications);
+      break;
     default:
       break;
   }
@@ -132,7 +138,6 @@ const getApplicationsWithDateRange = (dateFrom, dateTo) => {
 
 const filterApplicationsWithWord = (applications, word) => applications.filter(application =>
     application.pyt.includes(word) ||
-    application.odp.includes(word) ||
     application.wniosek.includes(word));
 
 const getBuildApplications = (applications) => filterApplicationsWithWord(applications, "budow");
@@ -141,13 +146,17 @@ const getCostApplications = (applications) => filterApplicationsWithWord(applica
 
 const getOwnerApplications = (applications) => filterApplicationsWithWord(applications, "właściciel");
 
-const getActApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "ustaw");
+const getActApplications = (applications) =>  filterApplicationsWithWord(applications, "ustaw");
 
-const getAccessApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dostęp");
+const getAccessApplications = (applications) => filterApplicationsWithWord(applications, "dostęp");
 
-const getBailoutApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dofinansowanie");
+const getBailoutApplications = (applications) => filterApplicationsWithWord(applications, "dofinansowanie");
 
-const getDocumentApplications = (applications) => (applications) => filterApplicationsWithWord(applications, "dokument");
+const getDocumentApplications = (applications) => filterApplicationsWithWord(applications, "dokument");
+
+const getBuildingApplications = (applications) => filterApplicationsWithWord(applications, "budyn");
+
+const getPermissionApplications = (applications) => filterApplicationsWithWord(applications, "pozwol");
 
 const httpGet = (theUrl) => {
     var xmlHttp = new XMLHttpRequest();
